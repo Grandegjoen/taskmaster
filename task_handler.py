@@ -17,6 +17,7 @@ class TaskHandler():
     @staticmethod
     def create_task(task_name, task_importance, task_message=""):
         task_name = " ".join(task_name)  # Join the words into a single string
+        task_message = " ".join(task_message)  # Join the words into a single string
         db = ResourceHandler.load_db()
         task_id = TaskHandler.get_next_task_id(db)
         task_path = ResourceHandler.get_storage_path() / "tasks" / f"{task_id}.md"

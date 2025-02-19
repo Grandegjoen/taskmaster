@@ -1,4 +1,5 @@
 import argparse
+from argparse import RawTextHelpFormatter
 
 class ArgumentHandler:
     @staticmethod
@@ -7,34 +8,57 @@ class ArgumentHandler:
     
     @staticmethod
     def parse_arguments():
-        parser = argparse.ArgumentParser(description="Task management CLI")
-        
-        parser = argparse.ArgumentParser(description="Task manager CLI")
+        """
+        Handles command-line argument parsing for the Task Management CLI.
 
+        Main Actions (Mutually Exclusive):
+        - `--new <task_name>`: Creates a new task. MESSAGE and IMPORTANCE are optional arguments here.
+        - `--open <task_id>`: Opens an existing task by ID.
+        - `--complete <task_id>`: Marks a task as complete.
+        - `--delete <task_id>`: Deletes a task.
+        - `--rename <task_id> <new_name>`: Renames a task.
+        - `--changeenvironment <env_name>`: Switches to a different environment.
+        - `--listtasks [task_id|all]`: Lists tasks. Defaults to the current environment if no argument is given.
+        - `--getenvironment [current|all]`: Retrieves the current environment or lists all available ones.
+        - `--config`: Opens the configuration file in the preferred editor.
+        - `--setup`: Performs initial setup of directories and config.
+
+        Additional Arguments:
+        - `--message <text>`: A description for a new task (used with `--new`).
+        - `--importance <1-10>`: Sets a task's importance level (1-10).
+        - `--id <task_id>`: Specifies a task or environment ID (used with various actions).
+        """
+        parser = argparse.ArgumentParser(
+            description="Task Management CLI",
+            epilog="For more help, run `task --help`.",
+            formatter_class=RawTextHelpFormatter
+        )
         # Mutually exclusive group for main actions
         main_group = parser.add_mutually_exclusive_group()
 
         main_group.add_argument(
             "-n", "--new",
             nargs="+",
-            help="Creates a new task. Requires --importance."
+            metavar="My Task",
+            help="Creates a new task.\n\nOptional arguments:\n-m/--message <your message>\n-i/--importance <1-10>.\nExample: <task --new Buy computers -m Remember to buy the computers by end of week -i 8>\n\n"
         )
 
         main_group.add_argument(
-            "-o", "--open", 
+            "-o", "--open",
+            metavar="3",
             type=int, 
-            help="Opens a task, given a correct ID."
+            help="Opens an existing task by ID. No arguments required.\nExample: <task -o 3>\n\n"
         )
 
         main_group.add_argument(
             "-c", "--complete", 
-            help="Marks the specified task ID as complete."
+            help="Completes an existing task by ID. No arguments required.\nExample: <task -c 3>\n\n"
         )
 
         main_group.add_argument(
             "-d", "--delete", 
             type=int, 
-            help="Deletes the specified task ID."
+            help="Deletes an existing task by ID. No arguments required.\nDoes not delete the file itself, but rather marks it as deleted.\nExample: <task -d 3>\n\n"
         )
 
         main_group.add_argument(
@@ -42,57 +66,50 @@ class ArgumentHandler:
             type=str, 
             nargs=2,
             metavar=("ID", "NEW_NAME"),
-            help="--rename <task_id> <new_name>."
+            help="Renames an existing task.\nExample: <task --rename 4 \"New name\"\n\n"
         )
 
         main_group.add_argument(
             "-ce", "--changeenvironment", 
             type=str, 
-            help="Change to a new environment."
+            help="Changes the environment / task category, creating a new one if it doesn't already exist.\nExample: <task -ce new_environment>\n\n"
         )
 
         main_group.add_argument(
             "-lt", "--listtasks",
             nargs="?",
             const="current",
-            help="Lists tasks. Use --listtasks <ID> for a specific task or --listtasks all for all tasks."
+            help="[task_id|all]: \nExample 1: <task -lt 4> | Displays data on task with ID 4.\nExample 2: <task -lt all> | Displays all tasks.\nExample 3: <task -lt> | Lists tasks in current environment.\n\n"
         )
 
         main_group.add_argument(
             "-ge", "--getenvironment",
             nargs="?",
             const="current",
-            help="Gets the current environment. Add \"all\" to list all available environments."
+            help="[current|all]: \nExample 1: <task -ge> | Defaults to current, printing your current environment.\nExample 2: <task -ge all> | Lists all your environments.\n\n"
         )
 
         main_group.add_argument(
             "--config", 
-            help="Opens the config file in preferred editor. Needs to be done before setup.", 
+            help="Opens the configuration file in the preferred editor.\n\n", 
             action="store_true"
         )
         
         main_group.add_argument(
             "--setup", 
-            help="Initial setup of directories and config", 
+            help="Performs initial setup of directories and config.\n\n", 
             action="store_true"
         )
 
         # Additional arguments
         parser.add_argument(
-            "-m", "--message", 
-            help="Message describing the task (used with --new)."
+            "-m", "--message",
+            nargs="+",
         )
         
         parser.add_argument(
             "-i", "--importance", 
             type=int, choices=range(1, 11), 
-            help="Task importance (1-10)."
-        )
-
-        parser.add_argument(
-            "-id", 
-            type=int, 
-            help="Task or environment ID"
         )
 
         # Parse the arguments
