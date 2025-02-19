@@ -12,8 +12,14 @@ class TaskHandler():
         for environment in db:
             print(len(db[environment]))
             task_id += len(db[environment])
-        task_path = ResourceHandler.get_task_folder() / f"{task_id}.md"
+        task_path = ResourceHandler.get_storage_path() / "tasks" / f"{task_id}.md"
+        task_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Always create the file
+        task_path.touch(exist_ok=True)
+
         environment = "default"
+
         # Save task content if message exists, otherwise open the task immediately.
         if task_message:
             with task_path.open("w") as f:
@@ -35,7 +41,7 @@ class TaskHandler():
         ResourceHandler.save_db(db)
 
         print(f"Task \"ID: {task_id} - {task_name}\" has been created in the {environment} environment!")
-
+        return
         if not task_message:
             TaskHandler.open_task(task_id)
     
@@ -141,7 +147,7 @@ class ArgumentHandler:
         )
 
         main_group.add_argument("-le", "--listenvironment", help="Lists the environments")
-        main_group.add_argument("--config", help="Opens the config file in preferred editor", action="store_true")
+        main_group.add_argument("--config", help="Opens the config file in preferred editor. Needs to be done before setup.", action="store_true")
         main_group.add_argument("--setup", help="Initial setup of directories and config", action="store_true")
 
         # Additional arguments
@@ -166,41 +172,43 @@ class ArgumentHandler:
 class ResourceHandler:
     home_dir = Path.home()
     task_dir = home_dir / ".pytask"
+    config_file = task_dir / "PyTask.ini"
     #task_folder = task_dir / "tasks"
     #db_file = task_dir / "tasks.json"
-    config_file = task_dir / "PyTask.ini"
 
     @classmethod
     def initial_setup(cls):
         cls.task_dir.mkdir(exist_ok=True)
-        #cls.task_folder.mkdir(exist_ok=True)
 
     @classmethod
-    def create_config(cls):
+    def create_config(cls, storage_path, editor):
+        ResourceHandler.initial_setup()
         if not cls.config_file.exists():
             config = configparser.ConfigParser()
             config["Settings"] = {
-                "editor": "vim", ## Get default editor or something perhaps?
+                "editor": editor,
                 "current_environment": "default",
-                "storage_path": Path.home() / ".pytask"
+                "storage_path": storage_path
             }
 
             with cls.config_file.open("w") as f:
                 config.write(f)
 
-            print("Config file created at", cls.config_file)
-            print("You can access it with the -c or --config flag. You can manually adjust the storage path of your tasks here.")
+            print("\n\nConfig file created at", cls.config_file)
+            print("\nYou can access it with the -c or --config flag.")
 
     @classmethod
     def load_db(cls):
-        if cls.db_file.exists():
-            with cls.db_file.open("r") as f:
+        db_file = ResourceHandler.get_storage_path() / "db.json"
+        if db_file.exists():
+            with db_file.open("r") as f:
                 return json.load(f)
         return {"tasks": []}
 
     @classmethod
     def save_db(cls, db):
-        with cls.db_file.open("w") as f:
+        db_file = ResourceHandler.get_storage_path() / "db.json"
+        with db_file.open("w") as f:
             json.dump(db, f, indent=4)
     
     @classmethod
@@ -213,25 +221,39 @@ class ResourceHandler:
         subprocess.run([editor, ResourceHandler.config_file])  # Open file in preferred editor
     
     @classmethod
-    def get_task_folder(cls):
+    def get_storage_path(cls):
         if cls.config_file.exists():
             config = configparser.ConfigParser()
             config.read(cls.config_file)  # Reads the config file
             if "Settings" in config and "storage_path" in config["Settings"]:
-                storage_path = Path(config["Settings"]["storage_path"]) / "tasks"
+                storage_path = Path(config["Settings"]["storage_path"])
                 storage_path.mkdir(exist_ok=True)
                 return storage_path
             else:
                 return None  # Or a default value
             
-print(ResourceHandler.get_task_folder())
+
+def setup_pytask():
+    storage_path = input("\nWhere would you like to store your data?\nPath: ")
+    default_editor = input("\nWhat editor would you like to use? (Leave empty for default system editor)\nEditor: ")
+    if not default_editor:
+        default_editor = "default"
+
+    path = Path(storage_path)
+    if not path.exists():
+        print("Invalid path given. Please try again.")
+        return
+
+    ResourceHandler.create_config(path, default_editor)
+    return
+    ResourceHandler.initial_setup()
+    ResourceHandler.create_config()
 
 def main():
     args = ArgumentHandler.parse_arguments()
 
     if args.setup:
-        ResourceHandler.initial_setup()
-        ResourceHandler.create_config()
+        setup_pytask()
         print("Setup complete.")
     elif args.config:
         ResourceHandler.open_config()
