@@ -79,7 +79,7 @@ class ArgumentHandler:
             "-lt", "--listtasks",
             nargs="?",
             const="current",
-            help="[task_id|all]: \nExample 1: <task -lt 4> | Displays data on task with ID 4.\nExample 2: <task -lt all> | Displays all tasks.\nExample 3: <task -lt> | Lists tasks in current environment.\n\n"
+            help="[<task_id>|current(default)|all]: \nExample 1: <task -lt 4> | Displays data on task with ID 4.\nExample 2: <task -lt all> | Displays all tasks.\nExample 3: <task -lt> | Lists tasks in current environment.\n\n"
         )
 
         main_group.add_argument(
@@ -108,8 +108,33 @@ class ArgumentHandler:
         )
         
         parser.add_argument(
-            "-i", "--importance", 
-            type=int, choices=range(1, 11), 
+            "-i", "--importance",
+            type=int, 
+            choices=range(1, 11), 
+        )
+
+        parser.add_argument(
+            "-s", "--sort",
+            const="id",
+            help="[id(default)|importance|status]",
+            choices=['id', 'importance', 'status'],
+            nargs="?",
+        )
+
+        parser.add_argument(
+            "--showcompleted",
+            const=False,
+            type=bool,
+            help="Include this flag to include completed tasks in -lt",
+            nargs="?",
+        )
+
+        parser.add_argument(
+            "--showdeleted",
+            const=False,
+            type=bool,
+            help="Include this flag to include deleted tasks in -lt",
+            nargs="?",
         )
 
         # Parse the arguments

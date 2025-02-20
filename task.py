@@ -25,7 +25,7 @@ def handle_command(args):
         "complete": lambda: TaskHandler.update_task(args.complete, "task_status", "Complete"),
         "delete": lambda: TaskHandler.update_task(args.delete, "task_status", "Deleted"),
         "rename": lambda: handle_rename(args.rename),
-        "listtasks": lambda: TaskHandler.list_tasks(args.listtasks),
+        "listtasks": lambda: handle_list_tasks(args),
         "changeenvironment": lambda: ResourceHandler.change_current_environment(args.changeenvironment),
         "getenvironment": lambda: handle_get_environment(args),
     }
@@ -34,6 +34,13 @@ def handle_command(args):
         if getattr(args, key, None):
             action()
             break
+
+def handle_list_tasks(args):
+    task_type = args.listtasks # What tasks to retrieve ['current', 'task_id', 'all']
+    sort_by = args.sort if args.sort == None else "id" # What to sort by ['id', 'status', 'importance']
+    show_completed = args.showcompleted != None
+    show_deleted = args.showdeleted != None # What to sort by ['id', 'status', 'importance']
+    TaskHandler.list_tasks(task_type, sort_by, show_completed, show_deleted)
 
 def handle_get_environment(args):
     if args.getenvironment == "all":

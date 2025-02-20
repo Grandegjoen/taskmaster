@@ -82,53 +82,74 @@ class TaskHandler():
         print(f"No task found with ID {task_id}.")
 
 
-    def list_tasks(arg):
-        db = ResourceHandler.load_db()
-        tasks = []
-        if arg == "current":
-            current_env = ResourceHandler.get_current_environment()
-            if current_env not in db:
-                print("No tasks exist in your current environment")
-                return
+def list_tasks(task_type, sort_by, show_completed, show_deleted):
+    db = ResourceHandler.load_db()
+    tasks = get_filtered_tasks(db, task_type, show_completed, show_deleted)
 
-            for task in db[current_env]:
-                task_data = {
-                    "id": task['task_id'],
-                    "name": task['task_name'],
-                    "importance": task['task_importance'],
-                    "status": task['task_status'],
-                    "environment": current_env
-                }
-                tasks.append(task_data)
+    if not tasks:
+        print("No matching tasks found.")
+        return
 
-        elif arg == "all":
-            for environment in db:
-                for task in db[environment]:
-                    task_data = {
-                        "id": task['task_id'],
-                        "name": task['task_name'],
-                        "importance": task['task_importance'],
-                        "status": task['task_status'],
-                        "environment": environment
-                    }
-                    tasks.append(task_data)
-                    
-        elif arg.isnumeric():
-            for environment, tasks in db.items():
-                for task in tasks:
-                    if task["task_id"] == int(arg):
-                        task_data = {
-                            "id": task['task_id'],
-                            "name": task['task_name'],
-                            "importance": task['task_importance'],
-                            "status": task['task_status'],
-                            "environment": environment
-                        }
-                        tasks.append(task_data)
-        else:
-            return
+    sorted_tasks = sort_tasks(tasks, sort_by)
+    generate_table(sorted_tasks)
 
-        generate_table(tasks)
+
+def get_filtered_tasks(db, task_type, show_completed, show_deleted):
+    """Retrieves tasks based on task_type and filters out completed/deleted ones if needed."""
+    tasks = []
+
+    if task_type == "current":
+        current_env = ResourceHandler.get_current_environment()
+        if current_env not in db:
+            return []
+
+        tasks = extract_tasks(db[current_env], current_env, show_completed, show_deleted)
+
+    elif task_type == "all":
+        for environment, task_list in db.items():
+            tasks.extend(extract_tasks(task_list, environment, show_completed, show_deleted))
+
+    elif task_type.isnumeric():
+        task_id = int(task_type)
+        for environment, task_list in db.items():
+            for task in task_list:
+                if task["task_id"] == task_id:
+                    if should_include(task, show_completed, show_deleted):
+                        tasks.append(format_task(task, environment))
+
+    return tasks
+
+
+def extract_tasks(task_list, environment, show_completed, show_deleted):
+    """Extracts and formats tasks from a list while applying filters."""
+    return [format_task(task, environment) for task in task_list if should_include(task, show_completed, show_deleted)]
+
+
+def should_include(task, show_completed, show_deleted):
+    """Checks if a task should be included based on completed/deleted filters."""
+    return (show_completed or task["task_status"] != "completed") and \
+           (show_deleted or task["task_status"] != "deleted")
+
+
+def format_task(task, environment):
+    """Formats a task dictionary for display."""
+    return {
+        "id": task["task_id"],
+        "name": task["task_name"],
+        "importance": task["task_importance"],
+        "status": task["task_status"],
+        "environment": environment
+    }
+
+
+def sort_tasks(tasks, sort_by):
+    """Sorts tasks based on the given criteria."""
+    valid_sorts = {"id": "id", "importance": "importance", "status": "status"}
+
+    if sort_by not in valid_sorts:
+        return tasks  # Return unsorted if invalid sort_by
+
+    return sorted(tasks, key=lambda t: t[valid_sorts[sort_by]])
 
 def generate_table(tasks):
     caption = "1 Task" if len(tasks) < 2 else ("Tasks: " + str(len(tasks)))
