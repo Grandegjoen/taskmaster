@@ -90,6 +90,12 @@ class ArgumentHandler:
         )
 
         main_group.add_argument(
+            "-ci", "--changeimportance",
+            type=int, 
+            help="Changes the importance.\nUsed with -i/--importance flag\nExample: task -ci <TASK_ID> -i <IMPORTANCE>\n\n"
+        )
+
+        main_group.add_argument(
             "--config", 
             help="Opens the configuration file in the preferred editor.\n\n", 
             action="store_true"
@@ -115,7 +121,6 @@ class ArgumentHandler:
 
         parser.add_argument(
             "-s", "--sort",
-            const="id",
             help="[id(default)|importance|status]",
             choices=['id', 'importance', 'status'],
             nargs="?",

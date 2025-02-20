@@ -27,6 +27,7 @@ def handle_command(args):
         "rename": lambda: handle_rename(args.rename),
         "listtasks": lambda: handle_list_tasks(args),
         "changeenvironment": lambda: ResourceHandler.change_current_environment(args.changeenvironment),
+        "changeimportance": lambda: change_importance(args),
         "getenvironment": lambda: handle_get_environment(args),
     }
     
@@ -35,11 +36,20 @@ def handle_command(args):
             action()
             break
 
+def change_importance(args):
+    task = args.changeimportance
+    importance = args.importance
+    if importance == None:
+        print("Missing -i flag, exiting.")
+        exit(-1)
+    
+    TaskHandler.update_task(task, 'task_importance', importance)
+
 def handle_list_tasks(args):
     task_type = args.listtasks # What tasks to retrieve ['current', 'task_id', 'all']
-    sort_by = args.sort if args.sort == None else "id" # What to sort by ['id', 'status', 'importance']
+    sort_by = args.sort if args.sort != None else "id" # What to sort by ['id', 'status', 'importance']
     show_completed = args.showcompleted != None
-    show_deleted = args.showdeleted != None # What to sort by ['id', 'status', 'importance']
+    show_deleted = args.showdeleted != None
     TaskHandler.list_tasks(task_type, sort_by, show_completed, show_deleted)
 
 def handle_get_environment(args):
