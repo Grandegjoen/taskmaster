@@ -20,7 +20,7 @@ class TaskHandler():
         task_message = " ".join(task_message)  # Join the words into a single string
         db = ResourceHandler.load_db()
         task_id = TaskHandler.get_next_task_id(db)
-        task_path = ResourceHandler.get_storage_path() / "tasks" / f"{task_id}.md"
+        task_path = ResourceHandler.get_storage_path() / "tasks" / f"task_{task_id}.md"
         TaskHandler.create_task_file(task_path, task_message)
 
         environment = ResourceHandler.get_current_environment()
@@ -97,7 +97,7 @@ class TaskHandler():
                     "name": task['task_name'],
                     "importance": task['task_importance'],
                     "status": task['task_status'],
-                    "environment": environment
+                    "environment": current_env
                 }
                 tasks.append(task_data)
 
